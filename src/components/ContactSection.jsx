@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 export default function ContactSection({ impressumOpen, privacyOpen, onCloseModals, onOpenImpressum, onOpenPrivacy }) {
   return (

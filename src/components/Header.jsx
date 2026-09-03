@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
-export default function Header({ onOpenImpressum, onOpenPrivacy, onOpenInquire, theme = 'dark', onToggleTheme }) {
+export default function Header({ onOpenInquire, theme = 'dark', onToggleTheme }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [printsOpen, setPrintsOpen] = useState(false);
 

@@ -10,10 +10,10 @@ const InstagramIcon = ({ className }) => (
 );
 
 export default function AcquireModal({ item, onClose }) {
-  if (!item) return null;
-
   const [selectedSize, setSelectedSize] = useState('L');
   const [copied, setCopied] = useState(false);
+
+  if (!item) return null;
 
   const title = item.title || item.name || "Figure Map Edition";
   const dmText = `Hey Figure Map, I'd like to acquire [${title}] in Size: ${selectedSize}. Please send acquisition coordinates.`;

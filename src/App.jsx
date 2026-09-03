@@ -7,7 +7,7 @@ import BrandingSection from './components/BrandingSection';
 import ContactSection from './components/ContactSection';
 import AcquireModal from './components/AcquireModal';
 import PasswordGate from './components/PasswordGate';
-import { POSTERS, ALBUMS } from './data/taxerData';
+import { POSTERS } from './data/taxerData';
 
 export default function App() {
   const [isUnlocked, setIsUnlocked] = useState(() => {
@@ -47,8 +47,6 @@ export default function App() {
       <Header
         theme={theme}
         onToggleTheme={toggleTheme}
-        onOpenImpressum={() => setImpressumOpen(true)}
-        onOpenPrivacy={() => setPrivacyOpen(true)}
         onOpenInquire={handleOpenInquire}
       />
 
