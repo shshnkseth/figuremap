@@ -189,12 +189,16 @@ button {
 /* WORK SECTION & STICKY EYE */
 .work {
   position: relative;
+  z-index: 2;
 }
 
 .work__sticky {
-  position: fixed;
-  inset: 0 0 auto 0;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 100svh;
+  margin-bottom: -100svh;
   z-index: 1;
   pointer-events: none;
   mix-blend-mode: normal;
@@ -377,8 +381,10 @@ button {
 /* ALBUM ARTWORKS — PINNED TURNTABLE SECTION */
 .albums {
   position: relative;
+  z-index: 20;
   margin-top: clamp(200px, 42vh, 520px);
   height: calc(100svh + 1600px);
+  background: var(--bg);
 }
 
 .albums__pin {
@@ -387,6 +393,7 @@ button {
   height: 100svh;
   overflow: hidden;
   background: var(--bg);
+  z-index: 20;
 }
 
 .albums__gl {
@@ -440,6 +447,8 @@ button {
 /* BRANDING SECTION — GIANT WORD */
 .branding {
   position: relative;
+  z-index: 20;
+  background: var(--bg);
   padding-bottom: clamp(100px, 16vh, 200px);
 }
 
@@ -460,6 +469,8 @@ button {
 /* BRANDING STICKY HUD PROJECT SHOWCASE */
 .brand2 {
   position: relative;
+  z-index: 20;
+  background: var(--bg);
   padding-top: clamp(30px, 5vh, 90px);
   padding-bottom: clamp(140px, 23vh, 320px);
 }
@@ -468,7 +479,7 @@ button {
   position: sticky;
   top: 0;
   height: 100svh;
-  z-index: 3;
+  z-index: 21;
   pointer-events: none;
   mix-blend-mode: difference;
 }
