@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Trash2, Edit3, Image as ImageIcon, ArrowLeft, LogOut, 
-  Lock, Upload, Eye, RefreshCw, X, Tag
+  Upload, Eye, RefreshCw, X, Tag
 } from 'lucide-react';
 import { getStoredCollections, saveStoredCollections, resetStoredCollections } from '../utils/cmsStore';
 
@@ -162,83 +162,122 @@ export default function AdminCMS({ onExit }) {
     ? items 
     : items.filter((it) => it.tag === selectedFilter);
 
+  const [rememberDevice, setRememberDevice] = useState(true);
+
   // -------------------------------------------------------------
-  // LOGIN SCREEN
+  // LOGIN SCREEN (MATCHING REFERENCE DESIGN)
   // -------------------------------------------------------------
   if (!isAuthenticated) {
     return (
       <div 
-        className="fixed inset-0 z-[9999] bg-[#090909] text-[#D9D9D9] flex flex-col items-center justify-center p-6 select-none"
+        className="fixed inset-0 z-[9999] bg-[#CBD2DC] text-[#1E293B] flex items-center justify-center p-4 sm:p-6 select-none"
         style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
       >
-        <div className="w-full max-w-sm flex flex-col items-center text-center">
+        {/* Main Card */}
+        <div className="w-full max-w-[740px] bg-white rounded-2xl shadow-2xl p-8 sm:p-14 relative flex flex-col justify-between min-h-[500px] sm:min-h-[540px] border border-black/5">
           
-          <div className="mb-6 flex items-center justify-center w-12 h-12 rounded-full border border-[var(--line,#333)] bg-[#141414]">
-            <Lock className="w-5 h-5 text-[#D9D9D9]" />
-          </div>
-
-          <h1 className="text-xl font-bold tracking-tight text-[#FFFFFF] mb-1">
-            FIGURE MAP CMS
-          </h1>
-          <p className="text-xs font-mono text-[#888888] tracking-widest uppercase mb-8">
-            Admin Index // Collections Portal
-          </p>
-
-          <form onSubmit={handleLogin} className="w-full space-y-4">
-            <div className="space-y-1 text-left">
-              <label className="block text-[10px] font-mono text-[#888888] tracking-wider uppercase">
-                Username
-              </label>
-              <input
-                type="text"
-                autoFocus
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  if (authError) setAuthError(false);
-                }}
-                placeholder="satyakala"
-                className="w-full bg-[#141414] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#FFFFFF] py-2.5 px-3.5 text-sm font-mono focus:outline-none transition-colors"
+          {/* Top Left Stylized Brand Icon */}
+          <div className="flex justify-between items-center w-full">
+            <div className="opacity-30 hover:opacity-80 transition-opacity">
+              <img
+                src="/images/logo-black.png"
+                alt="Figure Map"
+                className="h-4 sm:h-5 w-auto object-contain"
               />
             </div>
-
-            <div className="space-y-1 text-left">
-              <label className="block text-[10px] font-mono text-[#888888] tracking-wider uppercase">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (authError) setAuthError(false);
-                }}
-                placeholder="••••••••••"
-                className="w-full bg-[#141414] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#FFFFFF] py-2.5 px-3.5 text-sm font-mono focus:outline-none transition-colors"
-              />
-            </div>
-
-            {authError && (
-              <div className="text-[11px] font-mono text-red-400 text-center tracking-wide">
-                ACCESS DENIED // INVALID CREDENTIALS
-              </div>
-            )}
 
             <button
-              type="submit"
-              className="w-full mt-2 py-3 bg-[#FFFFFF] text-[#000000] font-mono text-xs uppercase font-bold tracking-widest hover:bg-[#D9D9D9] transition-colors"
+              onClick={onExit}
+              className="text-xs text-[#94A3B8] hover:text-[#0F172A] transition-colors flex items-center gap-1"
             >
-              Enter Admin Index
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to site</span>
             </button>
-          </form>
+          </div>
 
-          <button
-            onClick={onExit}
-            className="mt-8 text-xs font-mono text-[#666666] hover:text-[#FFFFFF] transition-colors flex items-center gap-1.5"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Public Site</span>
-          </button>
+          {/* Center Login Form */}
+          <div className="w-full max-w-[340px] mx-auto text-center my-auto py-6">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A]">
+              Welcome to Figure Map.
+            </h1>
+            <p className="text-xs sm:text-sm text-[#64748B] mt-1 mb-6">
+              Collections Index and Studio CMS.
+            </p>
+
+            <form onSubmit={handleLogin} className="space-y-3.5 text-left">
+              <div>
+                <input
+                  type="text"
+                  autoFocus
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (authError) setAuthError(false);
+                  }}
+                  placeholder="username (satyakala)"
+                  className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (authError) setAuthError(false);
+                  }}
+                  placeholder="password (screamprint)"
+                  className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
+                />
+              </div>
+
+              {/* Remember Device Checkbox */}
+              <div className="flex items-center justify-between text-xs text-[#475569] pt-1 select-none">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#3B82F6]"
+                  />
+                  <span>Remember device</span>
+                </label>
+                <span className="text-[#94A3B8] text-[11px] cursor-help" title="Stay authenticated on this device">
+                  ⓘ
+                </span>
+              </div>
+
+              {authError && (
+                <div className="text-xs text-red-500 text-center font-medium pt-1 animate-fadeIn">
+                  Invalid username or password
+                </div>
+              )}
+
+              {/* Sign In / Continue Button */}
+              <button
+                type="submit"
+                className="w-full mt-2 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] active:bg-[#1D4ED8] text-white font-medium text-sm rounded-lg transition-colors shadow-sm cursor-pointer"
+              >
+                Continue
+              </button>
+            </form>
+          </div>
+
+          {/* Bottom Card Footer */}
+          <div className="flex justify-between items-end w-full pt-4">
+            <div className="text-[11px] text-[#94A3B8] text-center w-full">
+              By signing in, you consent to the Figure Map <span className="font-semibold text-[#64748B]">Terms of Use</span> and <span className="font-semibold text-[#64748B]">Privacy Policy</span>.
+            </div>
+
+            {/* Bottom Right Minimal Circular Badge */}
+            <div className="absolute right-6 bottom-6 opacity-30 text-[#64748B]">
+              <div className="w-6 h-6 rounded-full border border-[#94A3B8] flex items-center justify-center text-[10px] font-mono">
+                FM
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     );
