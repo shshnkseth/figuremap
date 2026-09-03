@@ -165,115 +165,89 @@ export default function AdminCMS({ onExit }) {
   const [rememberDevice, setRememberDevice] = useState(true);
 
   // -------------------------------------------------------------
-  // LOGIN SCREEN (MATCHING REFERENCE DESIGN)
+  // LOGIN SCREEN (MINIMAL CLEAN WHITE BACKGROUND)
   // -------------------------------------------------------------
   if (!isAuthenticated) {
     return (
       <div 
-        className="fixed inset-0 z-[9999] bg-[#CBD2DC] text-[#1E293B] flex items-center justify-center p-4 sm:p-6 select-none"
+        className="fixed inset-0 z-[9999] bg-white text-[#0F172A] flex flex-col items-center justify-center p-6 select-none"
         style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
       >
-        {/* Main Card */}
-        <div className="w-full max-w-[740px] bg-white rounded-2xl shadow-2xl p-8 sm:p-14 relative flex flex-col justify-between min-h-[500px] sm:min-h-[540px] border border-black/5">
+        <div className="w-full max-w-[340px] text-center">
           
-          {/* Top Left Stylized Brand Icon */}
-          <div className="flex justify-between items-center w-full">
-            <div className="opacity-30 hover:opacity-80 transition-opacity">
-              <img
-                src="/images/logo-black.png"
-                alt="Figure Map"
-                className="h-4 sm:h-5 w-auto object-contain"
+          <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Welcome to Figure Map.
+          </h1>
+          <p className="text-sm text-[#64748B] mt-1 mb-7">
+            Collections Index and Studio CMS.
+          </p>
+
+          <form onSubmit={handleLogin} className="space-y-3.5 text-left">
+            <div>
+              <input
+                type="text"
+                autoFocus
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (authError) setAuthError(false);
+                }}
+                placeholder="Username (satyakala)"
+                className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2.5 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
               />
             </div>
 
-            <button
-              onClick={onExit}
-              className="text-xs text-[#94A3B8] hover:text-[#0F172A] transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to site</span>
-            </button>
-          </div>
-
-          {/* Center Login Form */}
-          <div className="w-full max-w-[340px] mx-auto text-center my-auto py-6">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A]">
-              Welcome to Figure Map.
-            </h1>
-            <p className="text-xs sm:text-sm text-[#64748B] mt-1 mb-6">
-              Collections Index and Studio CMS.
-            </p>
-
-            <form onSubmit={handleLogin} className="space-y-3.5 text-left">
-              <div>
-                <input
-                  type="text"
-                  autoFocus
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    if (authError) setAuthError(false);
-                  }}
-                  placeholder="username (satyakala)"
-                  className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
-                />
-              </div>
-
-              <div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (authError) setAuthError(false);
-                  }}
-                  placeholder="password (screamprint)"
-                  className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
-                />
-              </div>
-
-              {/* Remember Device Checkbox */}
-              <div className="flex items-center justify-between text-xs text-[#475569] pt-1 select-none">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberDevice}
-                    onChange={(e) => setRememberDevice(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#3B82F6]"
-                  />
-                  <span>Remember device</span>
-                </label>
-                <span className="text-[#94A3B8] text-[11px] cursor-help" title="Stay authenticated on this device">
-                  ⓘ
-                </span>
-              </div>
-
-              {authError && (
-                <div className="text-xs text-red-500 text-center font-medium pt-1 animate-fadeIn">
-                  Invalid username or password
-                </div>
-              )}
-
-              {/* Sign In / Continue Button */}
-              <button
-                type="submit"
-                className="w-full mt-2 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] active:bg-[#1D4ED8] text-white font-medium text-sm rounded-lg transition-colors shadow-sm cursor-pointer"
-              >
-                Continue
-              </button>
-            </form>
-          </div>
-
-          {/* Bottom Card Footer */}
-          <div className="flex justify-end items-end w-full pt-4">
-            {/* Bottom Right Minimal Circular Badge */}
-            <div className="opacity-30 text-[#64748B]">
-              <div className="w-6 h-6 rounded-full border border-[#94A3B8] flex items-center justify-center text-[10px] font-mono">
-                FM
-              </div>
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (authError) setAuthError(false);
+                }}
+                placeholder="Password (screamprint)"
+                className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2.5 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
+              />
             </div>
-          </div>
 
+            {/* Remember Device Checkbox */}
+            <div className="flex items-center justify-between text-xs text-[#475569] pt-1 select-none">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberDevice}
+                  onChange={(e) => setRememberDevice(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#3B82F6]"
+                />
+                <span>Remember device</span>
+              </label>
+              <span className="text-[#94A3B8] text-[11px] cursor-help" title="Stay authenticated on this device">
+                ⓘ
+              </span>
+            </div>
+
+            {authError && (
+              <div className="text-xs text-red-500 text-center font-medium pt-1">
+                Invalid username or password
+              </div>
+            )}
+
+            {/* Sign In / Continue Button */}
+            <button
+              type="submit"
+              className="w-full mt-2 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] active:bg-[#1D4ED8] text-white font-medium text-sm rounded-lg transition-colors shadow-sm cursor-pointer"
+            >
+              Continue
+            </button>
+          </form>
+
+          <button
+            onClick={onExit}
+            className="mt-8 text-xs text-[#94A3B8] hover:text-[#0F172A] transition-colors inline-flex items-center gap-1.5"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to public site</span>
+          </button>
         </div>
       </div>
     );
