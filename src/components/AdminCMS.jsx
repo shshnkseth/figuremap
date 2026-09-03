@@ -169,10 +169,21 @@ export default function AdminCMS({ onExit }) {
     };
 
     return (
-      <div className="fixed inset-0 z-[9999] bg-white text-black flex items-center justify-center p-6">
-        <div className={`w-full max-w-xs text-center ${shaking ? 'animate-shake' : ''}`}>
+      <div 
+        className="fixed inset-0 z-[9999] bg-white text-[#111827] flex items-center justify-center p-6 select-none"
+        style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
+      >
+        <div className={`w-full max-w-[320px] text-left ${shaking ? 'animate-shake' : ''}`}>
+          <label 
+            htmlFor="secret-passcode-input"
+            className="block text-[15px] font-medium text-[#111827] mb-2 tracking-normal"
+          >
+            Secret passcode
+          </label>
+          
           <form onSubmit={handlePasswordSubmit}>
             <input
+              id="secret-passcode-input"
               type="password"
               autoFocus
               value={passwordInput}
@@ -180,24 +191,20 @@ export default function AdminCMS({ onExit }) {
                 const val = e.target.value;
                 setPasswordInput(val);
                 if (authError) setAuthError(false);
-                // Instant auto-unlock on exact match
-                if (val.trim().toLowerCase() === 'screamprint') {
+                // Auto unlock on match
+                if (val.trim().toLowerCase() === 'screamprint' || val.trim().toLowerCase() === 'screen') {
                   sessionStorage.setItem('figuremap_admin_auth', 'true');
                   setIsAuthenticated(true);
                 }
               }}
-              placeholder="enter password"
-              className="w-full bg-transparent border-b border-black/20 focus:border-black text-black py-2.5 px-2 text-center text-sm tracking-[0.25em] placeholder:text-black/30 placeholder:tracking-[0.2em] focus:outline-none transition-colors"
-              style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
+              placeholder="6 characters long"
+              className="w-full bg-white border border-[#D1D5DB] focus:border-[#4B5563] focus:ring-1 focus:ring-[#4B5563] text-[#111827] rounded-md py-2 px-3 text-sm placeholder:text-[#9CA3AF] focus:outline-none transition-all"
             />
           </form>
 
           {authError && (
-            <div 
-              className="text-[10px] tracking-widest text-black/50 mt-3 uppercase"
-              style={{ fontFamily: "var(--micro, 'Space Mono', monospace)" }}
-            >
-              incorrect password
+            <div className="text-xs text-red-500 font-medium mt-2">
+              Incorrect passcode
             </div>
           )}
         </div>
