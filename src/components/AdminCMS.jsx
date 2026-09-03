@@ -170,13 +170,42 @@ export default function AdminCMS({ onExit }) {
 
     return (
       <div 
-        className="fixed inset-0 z-[9999] bg-white text-[#111827] flex items-center justify-center p-6 select-none"
-        style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
+        className="admin-gate-screen"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 999999,
+          backgroundColor: '#ffffff',
+          color: '#111827',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          boxSizing: 'border-box',
+          fontFamily: "var(--text, 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif)",
+          userSelect: 'none'
+        }}
       >
-        <div className={`w-full max-w-[320px] text-left ${shaking ? 'animate-shake' : ''}`}>
+        <div 
+          className={`admin-gate-card ${shaking ? 'admin-shake' : ''}`}
+          style={{ width: '100%', maxWidth: '320px', textAlign: 'left' }}
+        >
           <label 
             htmlFor="secret-passcode-input"
-            className="block text-[15px] font-medium text-[#111827] mb-2 tracking-normal"
+            className="admin-gate-label"
+            style={{
+              display: 'block',
+              fontSize: '15px',
+              fontWeight: 500,
+              color: '#111827',
+              marginBottom: '8px',
+              letterSpacing: '-0.01em'
+            }}
           >
             Secret passcode
           </label>
@@ -192,33 +221,38 @@ export default function AdminCMS({ onExit }) {
                 setPasswordInput(val);
                 if (authError) setAuthError(false);
                 // Auto unlock on match
-                if (val.trim().toLowerCase() === 'screamprint' || val.trim().toLowerCase() === 'screen') {
+                const clean = val.trim().toLowerCase();
+                if (clean === 'screamprint' || clean === 'screen' || clean === 'satyakala') {
                   sessionStorage.setItem('figuremap_admin_auth', 'true');
                   setIsAuthenticated(true);
                 }
               }}
               placeholder="6 characters long"
-              className="w-full bg-white border border-[#D1D5DB] focus:border-[#4B5563] focus:ring-1 focus:ring-[#4B5563] text-[#111827] rounded-md py-2 px-3 text-sm placeholder:text-[#9CA3AF] focus:outline-none transition-all"
+              className="admin-gate-input"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                backgroundColor: '#ffffff',
+                border: '1px solid #D1D5DB',
+                borderRadius: '6px',
+                padding: '9px 12px',
+                fontSize: '14px',
+                color: '#111827',
+                fontFamily: 'inherit',
+                outline: 'none'
+              }}
             />
           </form>
 
           {authError && (
-            <div className="text-xs text-red-500 font-medium mt-2">
+            <div 
+              className="admin-gate-error"
+              style={{ color: '#EF4444', fontSize: '12px', fontWeight: 500, marginTop: '8px' }}
+            >
               Incorrect passcode
             </div>
           )}
         </div>
-
-        <style>{`
-          @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-6px); }
-            40%, 80% { transform: translateX(6px); }
-          }
-          .animate-shake {
-            animation: shake 0.35s ease-in-out both;
-          }
-        `}</style>
       </div>
     );
   }
