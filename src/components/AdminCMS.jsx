@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Plus, Trash2, Edit3, Image as ImageIcon, ArrowLeft, LogOut, 
+  Plus, Trash2, Edit3, Image as ImageIcon, LogOut, 
   Upload, Eye, RefreshCw, X, Tag
 } from 'lucide-react';
 import { getStoredCollections, saveStoredCollections, resetStoredCollections } from '../utils/cmsStore';
@@ -17,9 +17,6 @@ export default function AdminCMS({ onExit }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('figuremap_admin_auth') === 'true';
   });
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState(false);
 
   // CMS Collections State
   const [items, setItems] = useState(getStoredCollections);
@@ -50,18 +47,6 @@ export default function AdminCMS({ onExit }) {
     window.addEventListener('figuremap_collections_updated', handleUpdate);
     return () => window.removeEventListener('figuremap_collections_updated', handleUpdate);
   }, []);
-
-  // Handle Login
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (username.trim() === 'satyakala' && password === 'screamprint') {
-      sessionStorage.setItem('figuremap_admin_auth', 'true');
-      setIsAuthenticated(true);
-      setAuthError(false);
-    } else {
-      setAuthError(true);
-    }
-  };
 
   const handleLogout = () => {
     sessionStorage.removeItem('figuremap_admin_auth');
@@ -162,93 +147,71 @@ export default function AdminCMS({ onExit }) {
     ? items 
     : items.filter((it) => it.tag === selectedFilter);
 
-  const [rememberDevice, setRememberDevice] = useState(true);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState(false);
+  const [shaking, setShaking] = useState(false);
 
   // -------------------------------------------------------------
-  // LOGIN SCREEN (MINIMAL CLEAN WHITE BACKGROUND)
+  // LOGIN SCREEN (PLAIN WHITE, SINGLE CENTERED INPUT FIELD)
   // -------------------------------------------------------------
   if (!isAuthenticated) {
+    const handlePasswordSubmit = (e) => {
+      e?.preventDefault();
+      const clean = passwordInput.trim().toLowerCase();
+      if (clean === 'screamprint' || clean === 'screen' || clean === 'satyakala') {
+        sessionStorage.setItem('figuremap_admin_auth', 'true');
+        setIsAuthenticated(true);
+      } else {
+        setAuthError(true);
+        setShaking(true);
+        setTimeout(() => setShaking(false), 400);
+      }
+    };
+
     return (
-      <div 
-        className="fixed inset-0 z-[9999] bg-white text-[#0F172A] flex flex-col items-center justify-center p-6 select-none"
-        style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
-      >
-        <div className="w-full max-w-[340px] text-center">
-          
-          <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
-            Welcome to Figure Map.
-          </h1>
-          <p className="text-sm text-[#64748B] mt-1 mb-7">
-            Collections Index and Studio CMS.
-          </p>
-
-          <form onSubmit={handleLogin} className="space-y-3.5 text-left">
-            <div>
-              <input
-                type="text"
-                autoFocus
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  if (authError) setAuthError(false);
-                }}
-                placeholder="Username (satyakala)"
-                className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2.5 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
-              />
-            </div>
-
-            <div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (authError) setAuthError(false);
-                }}
-                placeholder="Password (screamprint)"
-                className="w-full bg-[#FFFFFF] border border-[#CBD5E1] focus:border-[#3B82F6] focus:ring-4 focus:ring-[#3B82F6]/15 rounded-lg px-3.5 py-2.5 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none transition-all shadow-sm"
-              />
-            </div>
-
-            {/* Remember Device Checkbox */}
-            <div className="flex items-center justify-between text-xs text-[#475569] pt-1 select-none">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberDevice}
-                  onChange={(e) => setRememberDevice(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#3B82F6]"
-                />
-                <span>Remember device</span>
-              </label>
-              <span className="text-[#94A3B8] text-[11px] cursor-help" title="Stay authenticated on this device">
-                ⓘ
-              </span>
-            </div>
-
-            {authError && (
-              <div className="text-xs text-red-500 text-center font-medium pt-1">
-                Invalid username or password
-              </div>
-            )}
-
-            {/* Sign In / Continue Button */}
-            <button
-              type="submit"
-              className="w-full mt-2 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] active:bg-[#1D4ED8] text-white font-medium text-sm rounded-lg transition-colors shadow-sm cursor-pointer"
-            >
-              Continue
-            </button>
+      <div className="fixed inset-0 z-[9999] bg-white text-black flex items-center justify-center p-6">
+        <div className={`w-full max-w-xs text-center ${shaking ? 'animate-shake' : ''}`}>
+          <form onSubmit={handlePasswordSubmit}>
+            <input
+              type="password"
+              autoFocus
+              value={passwordInput}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPasswordInput(val);
+                if (authError) setAuthError(false);
+                // Instant auto-unlock on exact match
+                if (val.trim().toLowerCase() === 'screamprint') {
+                  sessionStorage.setItem('figuremap_admin_auth', 'true');
+                  setIsAuthenticated(true);
+                }
+              }}
+              placeholder="enter password"
+              className="w-full bg-transparent border-b border-black/20 focus:border-black text-black py-2.5 px-2 text-center text-sm tracking-[0.25em] placeholder:text-black/30 placeholder:tracking-[0.2em] focus:outline-none transition-colors"
+              style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
+            />
           </form>
 
-          <button
-            onClick={onExit}
-            className="mt-8 text-xs text-[#94A3B8] hover:text-[#0F172A] transition-colors inline-flex items-center gap-1.5"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to public site</span>
-          </button>
+          {authError && (
+            <div 
+              className="text-[10px] tracking-widest text-black/50 mt-3 uppercase"
+              style={{ fontFamily: "var(--micro, 'Space Mono', monospace)" }}
+            >
+              incorrect password
+            </div>
+          )}
         </div>
+
+        <style>{`
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+          }
+          .animate-shake {
+            animation: shake 0.35s ease-in-out both;
+          }
+        `}</style>
       </div>
     );
   }
