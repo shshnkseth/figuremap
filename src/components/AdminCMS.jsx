@@ -1,165 +1,82 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Plus, Trash2, Edit3, Image as ImageIcon, LogOut, 
-  Upload, Eye, RefreshCw, X, Tag
-} from 'lucide-react';
+import { Plus, Trash2, Edit3, Image as ImageIcon, LogOut, Upload, ExternalLink, RotateCcw, X, ChevronDown, Search } from 'lucide-react';
 import { getStoredCollections, saveStoredCollections, resetStoredCollections } from '../utils/cmsStore';
 
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const YEARS  = ['2027','2026','2025','2024','2023'];
 
-const YEARS = ['2027', '2026', '2025', '2024', '2023'];
+const TAG_META = {
+  poster:  { label: 'Poster',  color: '#2563EB', bg: '#EFF6FF', dot: '#3B82F6' },
+  partner: { label: 'Partner', color: '#7C3AED', bg: '#F5F3FF', dot: '#8B5CF6' },
+  print:   { label: 'Print',   color: '#D97706', bg: '#FFFBEB', dot: '#F59E0B' },
+};
+
+function TagBadge({ tag }) {
+  const m = TAG_META[tag] || TAG_META.poster;
+  return (
+    <span style={{
+      display:'inline-flex', alignItems:'center', gap:5,
+      padding:'3px 10px', borderRadius:20,
+      background:m.bg, color:m.color,
+      fontSize:11, fontWeight:600, letterSpacing:'0.02em',
+      border:`1px solid ${m.color}22`,
+    }}>
+      <span style={{ width:6, height:6, borderRadius:'50%', background:m.dot, flexShrink:0 }} />
+      {m.label}
+    </span>
+  );
+}
+
+function Divider() {
+  return <div style={{ borderBottom:'1px solid #F0F0F0', margin:'4px 0' }} />;
+}
+
+function Field({ label, required, children }) {
+  return (
+    <div>
+      <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:6 }}>
+        {label}{required && <span style={{ color:'#EF4444', marginLeft:2 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 
 export default function AdminCMS({ onExit }) {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('figuremap_admin_auth') === 'true';
-  });
-
-  // CMS Collections State
-  const [items, setItems] = useState(getStoredCollections);
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'poster', 'partner', 'print'
-  
-  // Modal / Drawer state for creating / editing items
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() =>
+    sessionStorage.getItem('figuremap_admin_auth') === 'true'
+  );
+  const [items, setItems]         = useState(getStoredCollections);
+  const [filter, setFilter]       = useState('all');
+  const [search, setSearch]       = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-
-  // Form Fields
   const [formTitle, setFormTitle] = useState('');
-  const [formTag, setFormTag] = useState('poster'); // 'poster', 'partner', 'print'
-  const [formDesc, setFormDesc] = useState('');
+  const [formTag,   setFormTag]   = useState('poster');
+  const [formDesc,  setFormDesc]  = useState('');
   const [formMedia, setFormMedia] = useState('');
   const [formMonth, setFormMonth] = useState('September');
-  const [formYear, setFormYear] = useState('2026');
-  const [formPartnerName, setFormPartnerName] = useState('');
-  const [formTechnique, setFormTechnique] = useState('');
-  const [formSize, setFormSize] = useState('medium');
-
-  const fileInputRef = useRef(null);
-
-  // Sync with store
-  useEffect(() => {
-    const handleUpdate = () => {
-      setItems(getStoredCollections());
-    };
-    window.addEventListener('figuremap_collections_updated', handleUpdate);
-    return () => window.removeEventListener('figuremap_collections_updated', handleUpdate);
-  }, []);
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('figuremap_admin_auth');
-    setIsAuthenticated(false);
-  };
-
-  // Open Create Modal
-  const handleOpenCreate = () => {
-    setEditingItem(null);
-    setFormTitle('');
-    setFormTag(selectedFilter === 'all' ? 'poster' : selectedFilter);
-    setFormDesc('');
-    setFormMedia('');
-    setFormMonth('September');
-    setFormYear('2026');
-    setFormPartnerName('');
-    setFormTechnique('');
-    setFormSize('medium');
-    setIsModalOpen(true);
-  };
-
-  // Open Edit Modal
-  const handleOpenEdit = (item) => {
-    setEditingItem(item);
-    setFormTitle(item.title || '');
-    setFormTag(item.tag || 'poster');
-    setFormDesc(item.description || '');
-    setFormMedia(item.media || '');
-    setFormMonth(item.month || 'September');
-    setFormYear(item.year || '2026');
-    setFormPartnerName(item.partnerName || '');
-    setFormTechnique(item.technique || '');
-    setFormSize(item.size || 'medium');
-    setIsModalOpen(true);
-  };
-
-  // Handle File Upload (FileReader to Base64)
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormMedia(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Save Item (Create / Update)
-  const handleSaveItem = (e) => {
-    e.preventDefault();
-    if (!formTitle.trim()) return;
-
-    const newItem = {
-      id: editingItem ? editingItem.id : `col_${Date.now()}`,
-      tag: formTag,
-      title: formTitle.trim(),
-      description: formDesc.trim(),
-      media: formMedia || '/images/img_backprint_kinetic.png',
-      month: formMonth,
-      year: formYear,
-      partnerName: formPartnerName.trim(),
-      technique: formTechnique.trim(),
-      size: formSize,
-    };
-
-    let updatedList;
-    if (editingItem) {
-      updatedList = items.map((it) => (it.id === editingItem.id ? newItem : it));
-    } else {
-      updatedList = [newItem, ...items];
-    }
-
-    setItems(updatedList);
-    saveStoredCollections(updatedList);
-    setIsModalOpen(false);
-  };
-
-  // Delete Item
-  const handleDeleteItem = (id) => {
-    if (window.confirm('Delete this collection item from the archive?')) {
-      const updatedList = items.filter((it) => it.id !== id);
-      setItems(updatedList);
-      saveStoredCollections(updatedList);
-    }
-  };
-
-  // Reset to default collections
-  const handleResetDefaults = () => {
-    if (window.confirm('Reset all collections to initial studio defaults?')) {
-      const defaults = resetStoredCollections();
-      setItems(defaults);
-    }
-  };
-
-  // Filtered Items
-  const filteredItems = selectedFilter === 'all' 
-    ? items 
-    : items.filter((it) => it.tag === selectedFilter);
-
+  const [formYear,  setFormYear]  = useState('2026');
+  const [deletingId, setDeletingId] = useState(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState(false);
-  const [shaking, setShaking] = useState(false);
+  const [shaking, setShaking]     = useState(false);
+  const fileInputRef = useRef(null);
 
-  // -------------------------------------------------------------
-  // LOGIN SCREEN (PLAIN WHITE, SINGLE CENTERED INPUT FIELD)
-  // -------------------------------------------------------------
+  useEffect(() => {
+    const h = () => setItems(getStoredCollections());
+    window.addEventListener('figuremap_collections_updated', h);
+    return () => window.removeEventListener('figuremap_collections_updated', h);
+  }, []);
+
+  // ── Login gate ──────────────────────────────────────────────────────────
   if (!isAuthenticated) {
-    const handlePasswordSubmit = (e) => {
+    const submit = (e) => {
       e?.preventDefault();
-      const clean = passwordInput.trim().toLowerCase();
-      if (clean === 'screamprint' || clean === 'screen' || clean === 'satyakala') {
-        sessionStorage.setItem('figuremap_admin_auth', 'true');
+      const c = passwordInput.trim().toLowerCase();
+      if (['screamprint','screen','satyakala'].includes(c)) {
+        sessionStorage.setItem('figuremap_admin_auth','true');
         setIsAuthenticated(true);
       } else {
         setAuthError(true);
@@ -167,521 +84,481 @@ export default function AdminCMS({ onExit }) {
         setTimeout(() => setShaking(false), 400);
       }
     };
-
     return (
-      <div 
-        className="admin-gate-screen"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 999999,
-          backgroundColor: '#ffffff',
-          color: '#111827',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          boxSizing: 'border-box',
-          fontFamily: "var(--text, 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif)",
-          userSelect: 'none'
-        }}
-      >
-        <div 
-          className={`admin-gate-card ${shaking ? 'admin-shake' : ''}`}
-          style={{ width: '100%', maxWidth: '320px', textAlign: 'left' }}
-        >
-          <label 
-            htmlFor="secret-passcode-input"
-            className="admin-gate-label"
-            style={{
-              display: 'block',
-              fontSize: '15px',
-              fontWeight: 500,
-              color: '#111827',
-              marginBottom: '8px',
-              letterSpacing: '-0.01em'
-            }}
-          >
-            Secret passcode
-          </label>
-          
-          <form onSubmit={handlePasswordSubmit}>
+      <div style={{
+        position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:999999,
+        backgroundColor:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+        fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          @keyframes shakeGate{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+          .shakeGate{animation:shakeGate .35s ease-in-out both}
+          .gate-inp:focus{outline:none!important;border-color:#111!important;box-shadow:0 0 0 3px rgba(0,0,0,.06)!important}
+        `}</style>
+        <div className={shaking ? 'shakeGate' : ''} style={{ width:320 }}>
+          <p style={{ fontSize:12, color:'#9CA3AF', marginBottom:24, fontWeight:500, letterSpacing:'0.06em', textTransform:'uppercase' }}>
+            Figure Map Admin
+          </p>
+          <form onSubmit={submit}>
+            <label style={{ display:'block', fontSize:13, fontWeight:500, color:'#111', marginBottom:6 }}>
+              Secret passcode
+            </label>
             <input
-              id="secret-passcode-input"
+              className="gate-inp"
               type="password"
               autoFocus
               value={passwordInput}
-              onChange={(e) => {
-                const val = e.target.value;
-                setPasswordInput(val);
+              onChange={e => {
+                const v = e.target.value;
+                setPasswordInput(v);
                 if (authError) setAuthError(false);
-                // Auto unlock on match
-                const clean = val.trim().toLowerCase();
-                if (clean === 'screamprint' || clean === 'screen' || clean === 'satyakala') {
-                  sessionStorage.setItem('figuremap_admin_auth', 'true');
+                const c = v.trim().toLowerCase();
+                if (['screamprint','screen','satyakala'].includes(c)) {
+                  sessionStorage.setItem('figuremap_admin_auth','true');
                   setIsAuthenticated(true);
                 }
               }}
-              placeholder="6 characters long"
-              className="admin-gate-input"
+              placeholder="Enter passcode"
               style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                backgroundColor: '#ffffff',
-                border: '1px solid #D1D5DB',
-                borderRadius: '6px',
-                padding: '9px 12px',
-                fontSize: '14px',
-                color: '#111827',
-                fontFamily: 'inherit',
-                outline: 'none'
+                width:'100%', boxSizing:'border-box',
+                border:'1.5px solid #E5E7EB', borderRadius:8, padding:'10px 14px',
+                fontSize:14, color:'#111', background:'#fff', fontFamily:'inherit',
               }}
             />
+            {authError && <p style={{ fontSize:12, color:'#EF4444', marginTop:8, margin:'8px 0 0' }}>Incorrect passcode. Try again.</p>}
           </form>
-
-          {authError && (
-            <div 
-              className="admin-gate-error"
-              style={{ color: '#EF4444', fontSize: '12px', fontWeight: 500, marginTop: '8px' }}
-            >
-              Incorrect passcode
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
-  // -------------------------------------------------------------
-  // ADMIN CMS INDEX DASHBOARD
-  // -------------------------------------------------------------
+  // ── Handlers ──────────────────────────────────────────────────────────
+  const openCreate = () => {
+    setEditingItem(null);
+    setFormTitle(''); setFormTag('poster'); setFormDesc('');
+    setFormMedia(''); setFormMonth('September'); setFormYear('2026');
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (item) => {
+    setEditingItem(item);
+    setFormTitle(item.title || '');
+    setFormTag(item.tag || 'poster');
+    setFormDesc(item.description || '');
+    setFormMedia(item.media || '');
+    setFormMonth(item.month || 'September');
+    setFormYear(item.year || '2026');
+    setDrawerOpen(true);
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!formTitle.trim()) return;
+    const entry = {
+      id: editingItem ? editingItem.id : `col_${Date.now()}`,
+      tag: formTag,
+      title: formTitle.trim(),
+      description: formDesc.trim(),
+      media: formMedia || '/images/img_backprint_kinetic.png',
+      month: formMonth,
+      year: formYear,
+    };
+    const list = editingItem
+      ? items.map(it => it.id === editingItem.id ? entry : it)
+      : [entry, ...items];
+    setItems(list);
+    saveStoredCollections(list);
+    setDrawerOpen(false);
+  };
+
+  const handleDelete = (id) => {
+    const list = items.filter(it => it.id !== id);
+    setItems(list);
+    saveStoredCollections(list);
+    setDeletingId(null);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setFormMedia(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleReset = () => {
+    if (window.confirm('Reset all collections to defaults?')) {
+      setItems(resetStoredCollections());
+    }
+  };
+
+  // ── Derived ─────────────────────────────────────────────────────────
+  const visible = items
+    .filter(it => filter === 'all' || it.tag === filter)
+    .filter(it => !search || it.title.toLowerCase().includes(search.toLowerCase()) || (it.description || '').toLowerCase().includes(search.toLowerCase()));
+
+  const counts = {
+    all: items.length,
+    poster: items.filter(i => i.tag === 'poster').length,
+    partner: items.filter(i => i.tag === 'partner').length,
+    print: items.filter(i => i.tag === 'print').length,
+  };
+
+  // ── Shared style tokens ──────────────────────────────────────────────
+  const root = {
+    minHeight:'100vh', background:'#F9FAFB',
+    fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    color:'#111',
+  };
+  const topbar = {
+    background:'#fff', borderBottom:'1px solid #E5E7EB',
+    padding:'0 32px', display:'flex', alignItems:'center',
+    justifyContent:'space-between', height:56, position:'sticky', top:0, zIndex:100,
+  };
+  const btnText = {
+    background:'none', border:'none', cursor:'pointer', fontSize:13, color:'#6B7280',
+    display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:6,
+  };
+  const btnPrimary = {
+    background:'#111', color:'#fff', border:'none', cursor:'pointer',
+    fontSize:13, fontWeight:500, padding:'8px 16px', borderRadius:7,
+    display:'flex', alignItems:'center', gap:6,
+  };
+  const card = {
+    background:'#fff', border:'1px solid #E5E7EB', borderRadius:10, overflow:'hidden',
+  };
+  const th = {
+    padding:'10px 16px', textAlign:'left', fontSize:11, fontWeight:600, color:'#9CA3AF',
+    letterSpacing:'0.05em', textTransform:'uppercase',
+    borderBottom:'1px solid #F0F0F0', background:'#FAFAFA',
+  };
+  const td = { padding:'14px 16px', fontSize:13, color:'#374151', verticalAlign:'middle' };
+  const iconBtn = {
+    background:'none', border:'1px solid #E5E7EB', cursor:'pointer', borderRadius:6,
+    padding:'5px 8px', display:'inline-flex', alignItems:'center', justifyContent:'center',
+    color:'#6B7280',
+  };
+
   return (
-    <div 
-      className="min-h-screen bg-[#090909] text-[#D9D9D9] p-4 sm:p-8 selection:bg-white selection:text-black"
-      style={{ fontFamily: "var(--text, 'Plus Jakarta Sans', sans-serif)" }}
-    >
-      {/* Top Admin Nav */}
-      <header className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#222222] pb-6 gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FFFFFF]">
-              FIGURE MAP
-            </h1>
-            <span className="text-[10px] font-mono uppercase bg-[#181818] border border-[#333333] px-2 py-0.5 text-[#AAA]">
-              Archive CMS
-            </span>
-            <span className="text-[10px] font-mono text-[var(--accent,#D9532F)] tracking-wider">
-              ● satyakala
-            </span>
-          </div>
-          <p className="text-xs font-mono text-[#777777] mt-1">
-            Index, upload, and tag collections across Poster Grid, Partner Turntable, and Studio Showcase.
+    <div style={root}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .adm-row:hover td { background:#FAFAFA !important; }
+        .adm-ib:hover { border-color:#D1D5DB !important; background:#F9FAFB !important; }
+        .adm-del:hover { border-color:#FCA5A5 !important; background:#FEF2F2 !important; color:#EF4444 !important; }
+        .adm-tab:hover { background:#F3F4F6 !important; }
+        .adm-tbtn:hover { background:#F3F4F6 !important; }
+        .adm-pbtn:hover { opacity:.85 !important; }
+        .adm-inp:focus { outline:none !important; border-color:#111 !important; box-shadow:0 0 0 3px rgba(0,0,0,.06) !important; }
+        .adm-upload:hover { border-color:#9CA3AF !important; background:#F3F4F6 !important; }
+      `}</style>
+
+      {/* ── Top bar ── */}
+      <div style={topbar}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontWeight:700, fontSize:15, letterSpacing:'-0.01em' }}>Figure Map</span>
+          <span style={{ fontSize:11, fontWeight:500, color:'#6B7280', background:'#F3F4F6', padding:'2px 8px', borderRadius:4 }}>
+            Admin CMS
+          </span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <button onClick={onExit} className="adm-tbtn" style={btnText}>
+            <ExternalLink size={14} /> View site
+          </button>
+          <button
+            onClick={() => { sessionStorage.removeItem('figuremap_admin_auth'); setIsAuthenticated(false); }}
+            className="adm-tbtn" style={btnText}
+          >
+            <LogOut size={14} /> Log out
+          </button>
+          <button onClick={openCreate} className="adm-pbtn" style={btnPrimary}>
+            <Plus size={15} /> Add collection
+          </button>
+        </div>
+      </div>
+
+      {/* ── Page ── */}
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'32px' }}>
+        <div style={{ marginBottom:24 }}>
+          <h1 style={{ fontSize:22, fontWeight:700, letterSpacing:'-0.02em', margin:'0 0 4px' }}>Collections</h1>
+          <p style={{ fontSize:13, color:'#6B7280', margin:0 }}>
+            {items.length} item{items.length !== 1 ? 's' : ''} — manage your poster, partner, and print collections
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-2 bg-[#FFFFFF] text-[#000000] px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase hover:bg-[#D9D9D9] transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Upload Collection</span>
-          </button>
-
-          <button
-            onClick={onExit}
-            className="flex items-center gap-1.5 border border-[#333333] hover:border-[#FFFFFF] text-[#D9D9D9] px-3.5 py-2.5 text-xs font-mono tracking-wider uppercase transition-colors"
-            title="View live website"
-          >
-            <Eye className="w-4 h-4" />
-            <span className="hidden sm:inline">Live Site</span>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className="p-2.5 border border-[#333333] hover:border-red-500 hover:text-red-400 text-[#777777] transition-colors"
-            title="Logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto mt-8">
-        {/* Filter Tabs & Stats Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-[#1A1A1A] pb-4">
-          
-          {/* Tag Filter Tabs */}
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'all', label: 'All Collections', count: items.length },
-              { key: 'poster', label: 'Posters (Grid)', count: items.filter(i => i.tag === 'poster').length },
-              { key: 'partner', label: 'Partners (Vinyl)', count: items.filter(i => i.tag === 'partner').length },
-              { key: 'print', label: 'Prints (Studio)', count: items.filter(i => i.tag === 'print').length },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setSelectedFilter(tab.key)}
-                className={`px-3.5 py-1.5 text-xs font-mono tracking-wider transition-colors uppercase ${
-                  selectedFilter === tab.key
-                    ? 'bg-[#FFFFFF] text-[#000000] font-bold'
-                    : 'text-[#888888] hover:text-[#FFFFFF] hover:bg-[#141414]'
-                }`}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4 text-xs font-mono text-[#666666]">
-            <button
-              onClick={handleResetDefaults}
-              className="hover:text-[#AAA] flex items-center gap-1 text-[11px] underline underline-offset-4"
-              title="Reset to default seed data"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Reset Defaults</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Index Table List */}
-        <div className="border border-[#222222] bg-[#0E0E0E] overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#222222] bg-[#141414] text-[#777777] font-mono uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4 w-12">#</th>
-                <th className="py-3 px-4 w-20">Media</th>
-                <th className="py-3 px-4">Title &amp; Details</th>
-                <th className="py-3 px-4 w-36">Page Tag</th>
-                <th className="py-3 px-4 w-32">Date</th>
-                <th className="py-3 px-4 w-24 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1A1A1A]">
-              {filteredItems.map((item, idx) => (
-                <tr 
-                  key={item.id}
-                  className="hover:bg-[#121212] transition-colors group"
+        <div style={card}>
+          {/* ── Card header ── */}
+          <div style={{ padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid #F0F0F0', flexWrap:'wrap', gap:12 }}>
+            {/* Filter tabs */}
+            <div style={{ display:'flex', gap:2 }}>
+              {[
+                { key:'all',     label:`All (${counts.all})` },
+                { key:'poster',  label:`Posters (${counts.poster})` },
+                { key:'partner', label:`Partners (${counts.partner})` },
+                { key:'print',   label:`Prints (${counts.print})` },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setFilter(tab.key)}
+                  className="adm-tab"
+                  style={{
+                    padding:'6px 14px', fontSize:13, border:'none', cursor:'pointer', borderRadius:6,
+                    fontWeight: filter === tab.key ? 600 : 400,
+                    color: filter === tab.key ? '#111' : '#6B7280',
+                    background: filter === tab.key ? '#F3F4F6' : 'transparent',
+                    fontFamily:'inherit',
+                  }}
                 >
-                  {/* Row Number */}
-                  <td className="py-3 px-4 font-mono text-[#555555]">
-                    {String(idx + 1).padStart(2, '0')}
-                  </td>
-
-                  {/* Media Thumbnail */}
-                  <td className="py-3 px-4">
-                    <div className="w-12 h-14 bg-[#1C1C1C] border border-[#2B2B2B] overflow-hidden flex items-center justify-center">
-                      {item.media ? (
-                        <img
-                          src={item.media}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/images/img_backprint_kinetic.png';
-                          }}
-                        />
-                      ) : (
-                        <ImageIcon className="w-4 h-4 text-[#444444]" />
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Title & Description */}
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-sm text-[#FFFFFF] group-hover:text-[#FFFFFF] transition-colors">
-                      {item.title}
-                    </div>
-                    {item.description && (
-                      <div className="text-[#888888] text-xs mt-0.5 line-clamp-1">
-                        {item.description}
-                      </div>
-                    )}
-                    {item.partnerName && (
-                      <div className="text-[10px] font-mono text-[#666666] mt-0.5">
-                        Partner: {item.partnerName} {item.technique && `• ${item.technique}`}
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Tag / Page Landing */}
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[10px] uppercase font-bold tracking-wider rounded-none ${
-                      item.tag === 'poster' 
-                        ? 'bg-blue-950/60 text-blue-300 border border-blue-800/40' 
-                        : item.tag === 'partner'
-                        ? 'bg-purple-950/60 text-purple-300 border border-purple-800/40'
-                        : 'bg-amber-950/60 text-amber-300 border border-amber-800/40'
-                    }`}>
-                      <Tag className="w-2.5 h-2.5" />
-                      <span>{item.tag}</span>
-                    </span>
-                    <div className="text-[9px] font-mono text-[#555] mt-1">
-                      {item.tag === 'poster' && 'Lands on #prints grid'}
-                      {item.tag === 'partner' && 'Lands on #partners turntable'}
-                      {item.tag === 'print' && 'Lands on #studio showcase'}
-                    </div>
-                  </td>
-
-                  {/* Month & Year */}
-                  <td className="py-3 px-4 font-mono text-xs text-[#AAAAAA]">
-                    <span>{item.month || '—'} {item.year || '2026'}</span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3 px-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleOpenEdit(item)}
-                      className="p-1.5 text-[#777777] hover:text-[#FFFFFF] transition-colors inline-block"
-                      title="Edit Item"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="p-1.5 text-[#777777] hover:text-red-400 transition-colors inline-block"
-                      title="Delete Item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
+                  {tab.label}
+                </button>
               ))}
+            </div>
 
-              {filteredItems.length === 0 && (
+            {/* Search + reset */}
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, border:'1px solid #E5E7EB', borderRadius:7, padding:'7px 12px', width:220, background:'#fff' }}>
+                <Search size={14} color="#9CA3AF" style={{ flexShrink:0 }} />
+                <input
+                  className="adm-inp"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search collections…"
+                  style={{ border:'none', outline:'none', fontSize:13, color:'#111', background:'transparent', width:'100%', fontFamily:'inherit' }}
+                />
+              </div>
+              <button onClick={handleReset} className="adm-tbtn" style={{ ...btnText, padding:'7px 10px' }} title="Reset to defaults">
+                <RotateCcw size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* ── Table ── */}
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-xs font-mono text-[#666666]">
-                    No collections found in this category. Click "+ Upload Collection" to add one.
-                  </td>
+                  <th style={{ ...th, width:72 }}>Image</th>
+                  <th style={th}>Title</th>
+                  <th style={{ ...th, width:120 }}>Type</th>
+                  <th style={{ ...th, width:130 }}>Date</th>
+                  <th style={{ ...th, width:100, textAlign:'right' }}>Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </main>
+              </thead>
+              <tbody>
+                {visible.map(item => (
+                  <tr key={item.id} className="adm-row" style={{ borderBottom:'1px solid #F3F4F6' }}>
+                    <td style={td}>
+                      <div style={{ width:44, height:52, borderRadius:6, background:'#F3F4F6', overflow:'hidden', border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        {item.media
+                          ? <img src={item.media} alt={item.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.target.onerror=null; e.target.style.display='none'; }} />
+                          : <ImageIcon size={16} color="#D1D5DB" />
+                        }
+                      </div>
+                    </td>
+                    <td style={td}>
+                      <div style={{ fontWeight:600, color:'#111', fontSize:13, marginBottom:2 }}>{item.title}</div>
+                      {item.description && (
+                        <div style={{ fontSize:12, color:'#9CA3AF', maxWidth:420, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {item.description}
+                        </div>
+                      )}
+                    </td>
+                    <td style={td}><TagBadge tag={item.tag} /></td>
+                    <td style={{ ...td, color:'#9CA3AF', fontSize:12, whiteSpace:'nowrap' }}>{item.month} {item.year}</td>
+                    <td style={{ ...td, textAlign:'right' }}>
+                      <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                        <button onClick={() => openEdit(item)} className="adm-ib" style={iconBtn} title="Edit">
+                          <Edit3 size={13} />
+                        </button>
+                        <button onClick={() => setDeletingId(item.id)} className="adm-ib adm-del" style={iconBtn} title="Delete">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign:'center', padding:'64px 20px', color:'#9CA3AF', fontSize:14 }}>
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+                        <ImageIcon size={32} color="#E5E7EB" />
+                        <p style={{ margin:0, fontWeight:500 }}>No collections found</p>
+                        <p style={{ margin:0, fontSize:12, color:'#D1D5DB' }}>
+                          {search ? 'Try a different search term' : 'Click "Add collection" to get started'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* ADD / EDIT COLLECTION MODAL */}
-      {/* ------------------------------------------------------------- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-[#111111] text-[#D9D9D9] border border-[#2B2B2B] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-            
-            {/* Modal Header */}
-            <div className="flex justify-between items-center border-b border-[#222222] pb-4 mb-6">
+          {/* Footer */}
+          {visible.length > 0 && (
+            <div style={{ padding:'12px 20px', borderTop:'1px solid #F0F0F0', fontSize:12, color:'#9CA3AF' }}>
+              Showing {visible.length} of {items.length} collections
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Drawer ── */}
+      {drawerOpen && (
+        <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:200, display:'flex', justifyContent:'flex-end' }}>
+          <div onClick={() => setDrawerOpen(false)} style={{ flex:1, background:'rgba(0,0,0,0.35)' }} />
+          <div style={{ width:440, background:'#fff', height:'100vh', display:'flex', flexDirection:'column', boxShadow:'-4px 0 32px rgba(0,0,0,0.10)', overflowY:'auto' }}>
+            {/* Drawer header */}
+            <div style={{ padding:'20px 24px', borderBottom:'1px solid #F0F0F0', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, background:'#fff', zIndex:10 }}>
               <div>
-                <span className="text-[10px] font-mono text-[#888888] tracking-widest uppercase">
-                  {editingItem ? 'EDIT ENTRY' : 'NEW ENTRY'}
-                </span>
-                <h2 className="text-lg font-bold text-[#FFFFFF] mt-0.5">
-                  {editingItem ? 'Edit Collection Item' : 'Upload New Collection'}
+                <p style={{ fontSize:11, fontWeight:600, color:'#9CA3AF', margin:'0 0 2px', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                  {editingItem ? 'Edit collection' : 'New collection'}
+                </p>
+                <h2 style={{ fontSize:17, fontWeight:700, color:'#111', margin:0 }}>
+                  {editingItem ? editingItem.title : 'Add to index'}
                 </h2>
               </div>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-[#777777] hover:text-[#FFFFFF] p-1"
-              >
-                <X className="w-5 h-5" />
+              <button onClick={() => setDrawerOpen(false)} style={{ background:'none', border:'none', cursor:'pointer', padding:4, color:'#6B7280', borderRadius:6 }}>
+                <X size={18} />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSaveItem} className="space-y-5 text-left">
-              
-              {/* Tag Selector (Poster / Partner / Print) */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-mono text-[#888888] tracking-wider uppercase">
-                  Landing Tag <span className="text-[var(--accent,#D9532F)]">*</span>
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { key: 'poster', label: 'Poster', desc: 'Poster World Grid' },
-                    { key: 'partner', label: 'Partner', desc: 'Vinyl Turntable' },
-                    { key: 'print', label: 'Print', desc: 'Studio Showcase' },
-                  ].map((tg) => (
-                    <button
-                      key={tg.key}
-                      type="button"
-                      onClick={() => setFormTag(tg.key)}
-                      className={`py-2 px-3 border text-left font-mono transition-colors ${
-                        formTag === tg.key
-                          ? 'border-[#FFFFFF] bg-[#222222] text-[#FFFFFF]'
-                          : 'border-[#2B2B2B] text-[#777777] hover:border-[#555555]'
-                      }`}
-                    >
-                      <div className="text-xs font-bold uppercase">{tg.label}</div>
-                      <div className="text-[9px] text-[#888888] mt-0.5">{tg.desc}</div>
+            <form onSubmit={handleSave} style={{ flex:1, padding:'24px', display:'flex', flexDirection:'column', gap:20 }}>
+              {/* Type */}
+              <Field label="Type">
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                  {Object.entries(TAG_META).map(([key, meta]) => (
+                    <button key={key} type="button" onClick={() => setFormTag(key)} style={{
+                      padding:'10px 8px', border:`1.5px solid ${formTag === key ? meta.color : '#E5E7EB'}`,
+                      borderRadius:8, background: formTag === key ? meta.bg : '#fff',
+                      cursor:'pointer', textAlign:'left',
+                    }}>
+                      <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color: formTag === key ? meta.color : '#374151' }}>
+                        <span style={{ width:7, height:7, borderRadius:'50%', background: formTag === key ? meta.dot : '#D1D5DB' }} />
+                        {meta.label}
+                      </span>
                     </button>
                   ))}
                 </div>
-              </div>
+              </Field>
+
+              <Divider />
 
               {/* Title */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-mono text-[#888888] tracking-wider uppercase">
-                  Collection Title <span className="text-[var(--accent,#D9532F)]">*</span>
-                </label>
+              <Field label="Title" required>
                 <input
+                  className="adm-inp"
                   type="text"
-                  required
                   value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="e.g. KINETIC DYNAMICS — BACKPRINT"
-                  className="w-full bg-[#161616] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#FFFFFF] py-2.5 px-3 text-xs font-mono focus:outline-none"
+                  onChange={e => setFormTitle(e.target.value)}
+                  placeholder="e.g. Kinetic Dynamics — Backprint"
+                  required
+                  style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #E5E7EB', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#111', fontFamily:'inherit', background:'#fff' }}
                 />
-              </div>
-
-              {/* Month and Year */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-mono text-[#888888] tracking-wider uppercase">
-                    Month
-                  </label>
-                  <select
-                    value={formMonth}
-                    onChange={(e) => setFormMonth(e.target.value)}
-                    className="w-full bg-[#161616] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#FFFFFF] py-2.5 px-3 text-xs font-mono focus:outline-none"
-                  >
-                    {MONTHS.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-mono text-[#888888] tracking-wider uppercase">
-                    Year
-                  </label>
-                  <select
-                    value={formYear}
-                    onChange={(e) => setFormYear(e.target.value)}
-                    className="w-full bg-[#161616] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#FFFFFF] py-2.5 px-3 text-xs font-mono focus:outline-none"
-                  >
-                    {YEARS.map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              </Field>
 
               {/* Description */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-mono text-[#888888] tracking-wider uppercase">
-                  Description / Subtitle
-                </label>
+              <Field label="Description">
                 <textarea
-                  rows={2}
+                  className="adm-inp"
                   value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
-                  placeholder="e.g. Screenprint Pass 01 / 280 GSM Heavy White • Edition of 35"
-                  className="w-full bg-[#161616] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#FFFFFF] py-2 px-3 text-xs font-mono focus:outline-none"
+                  onChange={e => setFormDesc(e.target.value)}
+                  placeholder="Short description or subtitle"
+                  rows={3}
+                  style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #E5E7EB', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#111', fontFamily:'inherit', resize:'vertical', lineHeight:1.5 }}
                 />
+              </Field>
+
+              <Divider />
+
+              {/* Date row */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <Field label="Month">
+                  <div style={{ position:'relative' }}>
+                    <select className="adm-inp" value={formMonth} onChange={e => setFormMonth(e.target.value)} style={{ width:'100%', border:'1.5px solid #E5E7EB', borderRadius:8, padding:'10px 32px 10px 14px', fontSize:13, color:'#111', background:'#fff', appearance:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                      {MONTHS.map(m => <option key={m}>{m}</option>)}
+                    </select>
+                    <ChevronDown size={13} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF', pointerEvents:'none' }} />
+                  </div>
+                </Field>
+                <Field label="Year">
+                  <div style={{ position:'relative' }}>
+                    <select className="adm-inp" value={formYear} onChange={e => setFormYear(e.target.value)} style={{ width:'100%', border:'1.5px solid #E5E7EB', borderRadius:8, padding:'10px 32px 10px 14px', fontSize:13, color:'#111', background:'#fff', appearance:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                      {YEARS.map(y => <option key={y}>{y}</option>)}
+                    </select>
+                    <ChevronDown size={13} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF', pointerEvents:'none' }} />
+                  </div>
+                </Field>
               </div>
 
-              {/* Media Uploader */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-mono text-[#888888] tracking-wider uppercase">
-                  Media Image <span className="text-[var(--accent,#D9532F)]">*</span>
-                </label>
-                
-                <div className="flex gap-3 items-center">
-                  {/* Thumbnail Preview */}
-                  <div className="w-16 h-20 bg-[#161616] border border-[#2B2B2B] overflow-hidden flex items-center justify-center shrink-0">
-                    {formMedia ? (
-                      <img src={formMedia} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="w-5 h-5 text-[#444444]" />
-                    )}
-                  </div>
+              <Divider />
 
-                  <div className="flex-1 space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-2 px-3 border border-[#333333] hover:border-[#FFFFFF] bg-[#161616] text-xs font-mono text-[#D9D9D9] flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload Local Image</span>
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-
-                    <input
-                      type="text"
-                      value={formMedia}
-                      onChange={(e) => setFormMedia(e.target.value)}
-                      placeholder="Or paste image URL (/images/...)"
-                      className="w-full bg-[#161616] border border-[#2B2B2B] focus:border-[#FFFFFF] text-[#AAAAAA] py-1.5 px-3 text-[11px] font-mono focus:outline-none"
-                    />
+              {/* Media */}
+              <Field label="Cover image">
+                {formMedia && (
+                  <div style={{ width:'100%', aspectRatio:'16/9', borderRadius:8, overflow:'hidden', border:'1px solid #E5E7EB', marginBottom:10, background:'#F9FAFB' }}>
+                    <img src={formMedia} alt="Preview" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.target.onerror=null; setFormMedia(''); }} />
                   </div>
-                </div>
-              </div>
-
-              {/* Extra metadata for Partner / Poster */}
-              {formTag === 'partner' && (
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#1C1C1C]">
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono text-[#888888] tracking-wider uppercase">
-                      Partner Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formPartnerName}
-                      onChange={(e) => setFormPartnerName(e.target.value)}
-                      placeholder="e.g. Movement & Parkour"
-                      className="w-full bg-[#161616] border border-[#2B2B2B] text-[#FFFFFF] py-1.5 px-2.5 text-xs font-mono"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono text-[#888888] tracking-wider uppercase">
-                      Print Technique
-                    </label>
-                    <input
-                      type="text"
-                      value={formTechnique}
-                      onChange={(e) => setFormTechnique(e.target.value)}
-                      placeholder="e.g. 2-Pass Charcoal"
-                      className="w-full bg-[#161616] border border-[#2B2B2B] text-[#FFFFFF] py-1.5 px-2.5 text-xs font-mono"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Submit Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#222222]">
+                )}
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-[#333333] hover:border-[#666666] text-xs font-mono uppercase tracking-wider text-[#888888] transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="adm-upload"
+                  style={{ width:'100%', border:'1.5px dashed #D1D5DB', borderRadius:8, padding:'16px', background:'#FAFAFA', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginBottom:10 }}
                 >
+                  <Upload size={18} color="#9CA3AF" />
+                  <span style={{ fontSize:13, color:'#6B7280' }}>Upload image</span>
+                  <span style={{ fontSize:11, color:'#B0B8C4' }}>PNG, JPG, WebP</span>
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} style={{ display:'none' }} />
+                <input
+                  className="adm-inp"
+                  type="text"
+                  value={formMedia}
+                  onChange={e => setFormMedia(e.target.value)}
+                  placeholder="Or paste URL / path"
+                  style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #E5E7EB', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#111', fontFamily:'inherit', background:'#fff' }}
+                />
+              </Field>
+
+              {/* Drawer footer */}
+              <div style={{ display:'flex', gap:10, marginTop:'auto', paddingTop:8 }}>
+                <button type="button" onClick={() => setDrawerOpen(false)} style={{ flex:1, padding:'10px', border:'1.5px solid #E5E7EB', borderRadius:8, background:'#fff', fontSize:14, fontWeight:500, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#FFFFFF] text-[#000000] text-xs font-mono font-bold uppercase tracking-wider hover:bg-[#D9D9D9] transition-colors"
-                >
-                  {editingItem ? 'Save Changes' : 'Publish to Index'}
+                <button type="submit" style={{ flex:2, padding:'10px', background:'#111', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                  {editingItem ? 'Save changes' : 'Add to index'}
                 </button>
               </div>
-
             </form>
-
           </div>
         </div>
       )}
 
+      {/* ── Delete confirm ── */}
+      {deletingId && (() => {
+        const item = items.find(i => i.id === deletingId);
+        return (
+          <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:300, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ background:'#fff', borderRadius:12, padding:'28px', width:360, boxShadow:'0 8px 40px rgba(0,0,0,0.16)', fontFamily:"'Inter', sans-serif" }}>
+              <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 8px', color:'#111' }}>Delete collection?</h3>
+              <p style={{ fontSize:13, color:'#6B7280', margin:'0 0 24px', lineHeight:1.5 }}>
+                <strong style={{ color:'#111' }}>{item?.title}</strong> will be permanently removed from the index.
+              </p>
+              <div style={{ display:'flex', gap:10 }}>
+                <button onClick={() => setDeletingId(null)} style={{ flex:1, padding:'9px', border:'1.5px solid #E5E7EB', borderRadius:8, background:'#fff', fontSize:14, fontWeight:500, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+                  Cancel
+                </button>
+                <button onClick={() => handleDelete(deletingId)} style={{ flex:1, padding:'9px', background:'#EF4444', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
