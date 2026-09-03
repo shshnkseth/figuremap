@@ -9,9 +9,14 @@ import AcquireModal from './components/AcquireModal';
 import AdminCMS from './components/AdminCMS';
 
 export default function App() {
-  const [isAdmin, setIsAdmin] = useState(() => {
-    return window.location.hash === '#admin';
-  });
+  const checkIsAdmin = () => {
+    const hash = window.location.hash.toLowerCase();
+    const path = window.location.pathname.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    return hash.includes('admin') || path.includes('admin') || search.includes('admin');
+  };
+
+  const [isAdmin, setIsAdmin] = useState(checkIsAdmin);
   const [selectedItem, setSelectedItem] = useState(null);
   const [impressumOpen, setImpressumOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -24,13 +29,17 @@ export default function App() {
     localStorage.setItem('figuremap_theme', theme);
   }, [theme]);
 
-  // Listen for hash changes like #admin
+  // Listen for hash & route changes
   useEffect(() => {
-    const handleHashChange = () => {
-      setIsAdmin(window.location.hash === '#admin');
+    const handleRouteChange = () => {
+      setIsAdmin(checkIsAdmin());
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleRouteChange);
+    window.addEventListener('popstate', handleRouteChange);
+    return () => {
+      window.removeEventListener('hashchange', handleRouteChange);
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, []);
 
   const toggleTheme = () => {
