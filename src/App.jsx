@@ -6,9 +6,13 @@ import VinylArtworkSection from './components/VinylArtworkSection';
 import BrandingSection from './components/BrandingSection';
 import ContactSection from './components/ContactSection';
 import AcquireModal from './components/AcquireModal';
+import PasswordGate from './components/PasswordGate';
 import { POSTERS, ALBUMS } from './data/taxerData';
 
 export default function App() {
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    return sessionStorage.getItem('figuremap_unlocked') === 'true';
+  });
   const [selectedItem, setSelectedItem] = useState(null);
   const [impressumOpen, setImpressumOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -28,6 +32,10 @@ export default function App() {
   const handleOpenInquire = () => {
     setSelectedItem(POSTERS[0]);
   };
+
+  if (!isUnlocked) {
+    return <PasswordGate onUnlock={() => setIsUnlocked(true)} />;
+  }
 
   return (
     <div className="relative bg-[var(--bg)] text-[var(--ink)] min-h-screen transition-colors duration-300">
