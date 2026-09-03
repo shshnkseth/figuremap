@@ -1,11 +1,13 @@
 /* MEINHARD TAXER ARCHITECTURE FOR FIGURE MAP */
 
-:root {
+:root,
+[data-theme="dark"] {
   --bg: #090909;
   --ink: #D9D9D9;
   --ink-dim: rgba(217, 217, 217, 0.55);
   --line: rgba(217, 217, 217, 0.22);
   --accent: #D9532F;
+  --card-bg: #121212;
   --display: 'Cormorant Garamond', 'Cinzel', serif;
   --text: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --micro: 'Space Mono', monospace;
@@ -13,6 +15,15 @@
   --pad: clamp(14px, 2vw, 42px);
   --logo: clamp(1.063rem, 1.65vw, 1.875rem);
   --albumtype: clamp(1.75rem, 3.3vw, 3.5rem);
+}
+
+[data-theme="light"] {
+  --bg: #F4F3EE;
+  --ink: #0D0D0D;
+  --ink-dim: rgba(13, 13, 13, 0.55);
+  --line: rgba(13, 13, 13, 0.16);
+  --accent: #D9532F;
+  --card-bg: #FFFFFF;
 }
 
 * {
@@ -34,6 +45,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {
@@ -76,7 +88,7 @@ button {
   border: 0;
 }
 
-/* SITE HEADER (FIXED TOP, MIX-BLEND DIFFERENCE) */
+/* SITE HEADER */
 .site-header {
   position: fixed;
   top: 0;
@@ -84,30 +96,48 @@ button {
   right: 0;
   z-index: 100;
   height: 0;
-  mix-blend-mode: difference;
-  color: #d9d9d9;
+  color: var(--ink);
 }
 
 .site-header__name {
   position: absolute;
   left: var(--pad);
-  top: 21px;
-  font-family: var(--display);
-  font-weight: 500;
-  font-size: var(--logo);
-  line-height: 1.386;
-  letter-spacing: -0.03em;
-  white-space: nowrap;
+  top: 18px;
+  display: flex;
+  align-items: center;
 }
 
-.site-header__name sup {
-  font-size: 0.235em;
-  font-weight: 500;
-  letter-spacing: 0;
-  vertical-align: baseline;
-  position: relative;
-  top: -2.3em;
-  margin-left: 0.3em;
+.site-header__logo {
+  height: clamp(20px, 2.4vw, 32px);
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.25s var(--ease), opacity 0.25s ease;
+}
+
+.site-header__logo:hover {
+  transform: scale(1.03);
+}
+
+.site-header__theme-toggle {
+  position: absolute;
+  top: 22px;
+  right: calc(var(--pad) + 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+}
+
+.site-header__theme-toggle:hover {
+  border-color: var(--ink);
+  transform: scale(1.08);
 }
 
 .site-header__col {
@@ -553,8 +583,8 @@ main {
   bottom: 0;
   z-index: 0;
   height: 100svh;
-  background: #090909;
-  color: #d9d9d9;
+  background: var(--bg);
+  color: var(--ink);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -564,7 +594,7 @@ main {
   display: block;
   width: 100%;
   overflow: hidden;
-  color: #d9d9d9;
+  color: var(--ink);
 }
 
 .contact__track {
@@ -663,7 +693,7 @@ main {
     bottom: 0;
     left: 0;
     z-index: 10;
-    background: #090909;
+    background: var(--bg);
     visibility: hidden;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -690,7 +720,7 @@ main {
     font-family: var(--display);
     font-size: 38px;
     line-height: 1.12;
-    color: #d9d9d9;
+    color: var(--ink);
   }
 
   .nav-overlay__contact {

@@ -2,13 +2,19 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * Boundary-free Dusty & Sparkly Magnetic Ferrofluid Simulation
- * Features a tactile "Pinch Effect":
- * - Pressing/dragging (or hovering closely) pinches the fluid into a narrow neck and needle-point cone.
+ * Features a tactile "Pinch Effect" and dynamic Light/Dark theme support:
+ * - Pressing/dragging pinches the fluid into a narrow neck and needle-point cone.
  * - Squeezes particles radially toward the magnetic axis (Z-pinch constriction).
  * - Releasing snaps the fluid back with elastic viscous recoil.
+ * - Automatically adapts particle coloring for both Dark and Light themes.
  */
-export default function BlobCanvas() {
+export default function BlobCanvas({ theme = 'dark' }) {
   const canvasRef = useRef(null);
+  const themeRef = useRef(theme);
+
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -168,6 +174,7 @@ export default function BlobCanvas() {
 
     const render = () => {
       time += 0.005;
+      const isLight = themeRef.current === 'light';
 
       // Cursor & Pinch Interpolation
       magnet.x += (magnet.targetX - magnet.x) * 0.055;
@@ -278,23 +285,18 @@ export default function BlobCanvas() {
 
         // 4. PINCH EFFECT (Radial constriction toward the magnetic axis)
         if (facingMagnet > 0.05 && (magnet.pinchAmount > 0.02 || facingMagnet > 0.5)) {
-          // Projection along the magnetic line (0 at center, 1 at magnet cursor)
           const dotAlongAxis = (targetPosX * magDirX + targetPosY * magDirY);
           const normAxisPos = Math.max(0, dotAlongAxis / magDist);
 
-          // Transverse distance from the central magnetic axis
           const perpX = targetPosX - dotAlongAxis * magDirX;
           const perpY = targetPosY - dotAlongAxis * magDirY;
 
-          // Pinch squeeze: greatest waist constriction along the middle/tip
           const pinchStrength = Math.min(1.0, normAxisPos * 1.4) * (0.35 + magnet.pinchAmount * 0.65);
           const constriction = Math.max(0.15, 1.0 - pinchStrength);
 
-          // Constrict perpendicular coordinates
           targetPosX = dotAlongAxis * magDirX + perpX * constriction;
           targetPosY = dotAlongAxis * magDirY + perpY * constriction;
 
-          // Pull tip forward along magnetic beam
           if (magnet.pinchAmount > 0.02) {
             targetPosX += magDirX * (normAxisPos * magnet.pinchAmount * baseRadius * 0.85);
             targetPosY += magDirY * (normAxisPos * magnet.pinchAmount * baseRadius * 0.85);
@@ -354,7 +356,7 @@ export default function BlobCanvas() {
         const projX = cx + finalX * perspective;
         const projY = cy + finalY * perspective;
 
-        // 7. Dusty Texture & Subtle Twinkling Sparkle Shading
+        // 7. Dusty Texture & Sparkle Shading (Theme Aware)
         const depthNorm = Math.max(0, Math.min(1, (finalZ + baseRadius * 1.5) / (baseRadius * 3.0)));
         
         const sparkleVal = (Math.sin(time * p.sparkleSpeed + p.sparklePhase) + 1) * 0.5;
@@ -363,23 +365,50 @@ export default function BlobCanvas() {
 
         let dotRadius = p.baseSize * (0.65 + depthNorm * 0.6) * perspective;
         let alpha = 0.18 + depthNorm * 0.55;
-        let brightness = 175 + Math.floor(depthNorm * 65);
+        let colorR, colorG, colorB;
 
-        if (p.type === 'mote') {
-          alpha = 0.12 + sparkleVal * 0.45;
-          brightness = 190 + Math.floor(sparkleVal * 65);
-          dotRadius *= 0.85;
-        } else if (p.type === 'halo') {
-          alpha = 0.22 + sparkleVal * 0.4;
-          brightness = 180 + Math.floor(sparkleVal * 55);
-        } else if (isSpikeTip || isPinchFocus) {
-          // Intense glinting when pinched or at spike tips
-          dotRadius *= (1.25 + magnet.pinchAmount * 0.35);
-          alpha = Math.min(1.0, 0.8 + sparkleVal * 0.2);
-          brightness = 255;
+        if (isLight) {
+          // Light Mode: Deep Ink & Velvet Graphite dots
+          const darkTone = Math.floor(18 + (1 - depthNorm) * 50);
+          colorR = darkTone;
+          colorG = darkTone;
+          colorB = darkTone;
+
+          if (p.type === 'mote') {
+            alpha = 0.15 + sparkleVal * 0.5;
+            colorR = 40; colorG = 40; colorB = 40;
+            dotRadius *= 0.85;
+          } else if (p.type === 'halo') {
+            alpha = 0.25 + sparkleVal * 0.45;
+            colorR = 25; colorG = 25; colorB = 25;
+          } else if (isSpikeTip || isPinchFocus) {
+            dotRadius *= (1.25 + magnet.pinchAmount * 0.35);
+            alpha = Math.min(1.0, 0.85 + sparkleVal * 0.15);
+            colorR = 0; colorG = 0; colorB = 0;
+          } else {
+            alpha = Math.min(0.92, alpha + sparkleVal * 0.18);
+          }
         } else {
-          alpha = Math.min(0.9, alpha + sparkleVal * 0.18);
-          brightness = Math.min(255, brightness + Math.floor(sparkleVal * 25));
+          // Dark Mode: Silver, Stippled White & Pearl dots
+          let brightness = 175 + Math.floor(depthNorm * 65);
+          if (p.type === 'mote') {
+            alpha = 0.12 + sparkleVal * 0.45;
+            brightness = 190 + Math.floor(sparkleVal * 65);
+            dotRadius *= 0.85;
+          } else if (p.type === 'halo') {
+            alpha = 0.22 + sparkleVal * 0.4;
+            brightness = 180 + Math.floor(sparkleVal * 55);
+          } else if (isSpikeTip || isPinchFocus) {
+            dotRadius *= (1.25 + magnet.pinchAmount * 0.35);
+            alpha = Math.min(1.0, 0.8 + sparkleVal * 0.2);
+            brightness = 255;
+          } else {
+            alpha = Math.min(0.9, alpha + sparkleVal * 0.18);
+            brightness = Math.min(255, brightness + Math.floor(sparkleVal * 25));
+          }
+          colorR = brightness;
+          colorG = brightness;
+          colorB = brightness;
         }
 
         projectedDots.push({
@@ -388,7 +417,7 @@ export default function BlobCanvas() {
           z: finalZ,
           radius: Math.max(0.35, dotRadius),
           alpha,
-          brightness,
+          color: `rgba(${colorR}, ${colorG}, ${colorB}, ${alpha})`,
         });
       }
 
@@ -398,15 +427,9 @@ export default function BlobCanvas() {
       // Render Dots
       for (let i = 0; i < projectedDots.length; i++) {
         const dot = projectedDots[i];
-
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-
-        if (dot.brightness >= 250) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${dot.alpha})`;
-        } else {
-          ctx.fillStyle = `rgba(${dot.brightness}, ${dot.brightness}, ${dot.brightness}, ${dot.alpha})`;
-        }
+        ctx.fillStyle = dot.color;
         ctx.fill();
       }
 

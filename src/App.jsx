@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import BlobCanvas from './components/BlobCanvas';
 import PosterWorld from './components/PosterWorld';
@@ -12,19 +12,33 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [impressumOpen, setImpressumOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('figuremap_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('figuremap_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   const handleOpenInquire = () => {
     setSelectedItem(POSTERS[0]);
   };
 
   return (
-    <div className="relative bg-[#090909] text-[#D9D9D9] min-h-screen">
+    <div className="relative bg-[var(--bg)] text-[var(--ink)] min-h-screen transition-colors duration-300">
       <h1 className="sr-only">
         Figure Map — Art-Led Screen-Printing &amp; Collaborative Apparel Journal.
       </h1>
 
       {/* Fixed Swiss 4-Column Header */}
       <Header
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onOpenImpressum={() => setImpressumOpen(true)}
         onOpenPrivacy={() => setPrivacyOpen(true)}
         onOpenInquire={handleOpenInquire}
@@ -38,7 +52,7 @@ export default function App() {
           
           {/* Sticky Dense Dot Blob Centerpiece & Corner Coordinates */}
           <div className="work__sticky" aria-hidden="false">
-            <BlobCanvas />
+            <BlobCanvas theme={theme} />
             
             <div className="work__corner work__corner--bl">
               <span>© Figure Map 2026</span>
@@ -51,7 +65,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Spacer allowing eye to be visible before posters scroll over it */}
+          {/* Spacer allowing fluid to be visible before posters scroll over it */}
           <div className="work__spacer"></div>
 
           {/* 12-Column Asymmetrical Poster Grid */}

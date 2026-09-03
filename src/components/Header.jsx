@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
-export default function Header({ onOpenImpressum, onOpenPrivacy, onOpenInquire }) {
+export default function Header({ onOpenImpressum, onOpenPrivacy, onOpenInquire, theme = 'dark', onToggleTheme }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [printsOpen, setPrintsOpen] = useState(false);
 
@@ -12,11 +13,17 @@ export default function Header({ onOpenImpressum, onOpenPrivacy, onOpenInquire }
     setMenuOpen(false);
   };
 
+  const isLight = theme === 'light';
+
   return (
     <>
       <header className="site-header" id="siteHeader">
-        <a className="site-header__name" href="#top">
-          Figure&nbsp;Map<sup>©</sup>
+        <a className="site-header__name" href="#top" aria-label="Figure Map Home">
+          <img
+            src={isLight ? '/images/logo-black.png' : '/images/logo-white.png'}
+            alt="FIGURE MAP"
+            className="site-header__logo"
+          />
         </a>
 
         {/* Work Column: prints, partners, studio */}
@@ -41,6 +48,21 @@ export default function Header({ onOpenImpressum, onOpenPrivacy, onOpenInquire }
           <a href="mailto:studio@figuremap.archive">studio@figuremap.archive</a>
           <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">instagram</a>
         </nav>
+
+        {/* Theme Toggle Button (Sun / Moon) */}
+        <button
+          onClick={onToggleTheme}
+          className="site-header__theme-toggle"
+          type="button"
+          aria-label={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        >
+          {isLight ? (
+            <Moon className="w-4 h-4 stroke-[1.75]" />
+          ) : (
+            <Sun className="w-4 h-4 stroke-[1.75]" />
+          )}
+        </button>
 
         {/* Mobile menu trigger */}
         <button 
@@ -94,6 +116,16 @@ export default function Header({ onOpenImpressum, onOpenPrivacy, onOpenInquire }
                 </li>
               </ul>
             )}
+          </li>
+          <li>
+            <button
+              onClick={() => { onToggleTheme(); closeMenu(); }}
+              className="flex items-center gap-3 py-2 text-left w-full text-base font-mono uppercase tracking-wider text-[var(--ink)]"
+              type="button"
+            >
+              {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              <span>{isLight ? 'Dark Mode' : 'Light Mode'}</span>
+            </button>
           </li>
         </ul>
 
