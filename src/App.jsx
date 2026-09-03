@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
-import EyeCanvas from './components/EyeCanvas';
+import BlobCanvas from './components/BlobCanvas';
 import PosterWorld from './components/PosterWorld';
 import VinylArtworkSection from './components/VinylArtworkSection';
 import BrandingSection from './components/BrandingSection';
@@ -33,12 +33,12 @@ export default function App() {
       {/* Main Content (Leaves 100svh margin-bottom to reveal fixed marquee footer) */}
       <main id="top">
         
-        {/* WORK SECTION — STICKY EYE CANVAS + POSTER WORLD 12-COL GRID */}
+        {/* WORK SECTION — STICKY DENSE DOT BLOB CANVAS + POSTER WORLD 12-COL GRID */}
         <section className="work" id="work">
           
-          {/* Sticky Eyeball Centerpiece & Corner Coordinates */}
+          {/* Sticky Dense Dot Blob Centerpiece & Corner Coordinates */}
           <div className="work__sticky" aria-hidden="false">
-            <EyeCanvas />
+            <BlobCanvas />
             
             <div className="work__corner work__corner--bl">
               <span>© Figure Map 2026</span>
