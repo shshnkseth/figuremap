@@ -33,6 +33,13 @@ export default function ContactSection({ impressumOpen, privacyOpen, onCloseModa
         >
           privacy
         </button>
+
+        <a 
+          className="contact__link contact__link--admin" 
+          href="#admin"
+        >
+          admin
+        </a>
       </footer>
 
       {/* Impressum Legal Dialog */}

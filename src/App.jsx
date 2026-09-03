@@ -6,12 +6,11 @@ import VinylArtworkSection from './components/VinylArtworkSection';
 import BrandingSection from './components/BrandingSection';
 import ContactSection from './components/ContactSection';
 import AcquireModal from './components/AcquireModal';
-import PasswordGate from './components/PasswordGate';
-import { POSTERS } from './data/taxerData';
+import AdminCMS from './components/AdminCMS';
 
 export default function App() {
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-    return sessionStorage.getItem('figuremap_unlocked') === 'true';
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return window.location.hash === '#admin';
   });
   const [selectedItem, setSelectedItem] = useState(null);
   const [impressumOpen, setImpressumOpen] = useState(false);
@@ -25,16 +24,37 @@ export default function App() {
     localStorage.setItem('figuremap_theme', theme);
   }, [theme]);
 
+  // Listen for hash changes like #admin
+  useEffect(() => {
+    const handleHashChange = () => {
+      setIsAdmin(window.location.hash === '#admin');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   const handleOpenInquire = () => {
-    setSelectedItem(POSTERS[0]);
+    setSelectedItem({
+      title: 'SILKSCREEN CUSTOM EDITION',
+      description: 'Hand-Pulled Numbered Studio Run',
+      image: '/images/img_backprint_kinetic.png',
+    });
   };
 
-  if (!isUnlocked) {
-    return <PasswordGate onUnlock={() => setIsUnlocked(true)} />;
+  // If in Admin mode, render the Admin Index CMS
+  if (isAdmin) {
+    return (
+      <AdminCMS
+        onExit={() => {
+          window.location.hash = '';
+          setIsAdmin(false);
+        }}
+      />
+    );
   }
 
   return (

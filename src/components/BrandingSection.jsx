@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BRANDING_PROJECTS } from '../data/taxerData';
+import { getStoredCollections } from '../utils/cmsStore';
 
 export default function BrandingSection({ onSelectProject }) {
+  const [prints, setPrints] = useState(() => {
+    return getStoredCollections().filter((i) => i.tag === 'print');
+  });
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
   const groupsRef = useRef([]);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const list = getStoredCollections().filter((i) => i.tag === 'print');
+      setPrints(list);
+    };
+    window.addEventListener('figuremap_collections_updated', handleUpdate);
+    return () => window.removeEventListener('figuremap_collections_updated', handleUpdate);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,9 +32,12 @@ export default function BrandingSection({ onSelectProject }) {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [prints.length]);
 
-  const activeProj = BRANDING_PROJECTS[activeProjectIndex] || BRANDING_PROJECTS[0];
+  if (prints.length === 0) return null;
+
+  const activeProj = prints[activeProjectIndex] || prints[0];
+  const numFormatted = String(activeProjectIndex + 1).padStart(2, '0');
 
   return (
     <>
@@ -38,44 +53,46 @@ export default function BrandingSection({ onSelectProject }) {
         <div className="brand2__hud" aria-hidden="true">
           <h3 className="brand2__title">
             <span className="brand2__titleinner">
-              <sup className="brand2__num">{activeProj.num}</sup>
+              <sup className="brand2__num">{numFormatted}</sup>
               <span className="brand2__name">{activeProj.title}</span>
             </span>
           </h3>
-          <p className="brand2__desc">{activeProj.desc}</p>
+          <p className="brand2__desc">{activeProj.description}</p>
         </div>
 
         {/* Parallax Media Groups Scrolling Behind */}
         <div className="brand2__groups">
-          {BRANDING_PROJECTS.map((proj, pIdx) => (
-            <div
-              key={proj.num}
-              ref={(el) => (groupsRef.current[pIdx] = el)}
-              className="brand2__group"
-              data-num={proj.num}
-              data-title={proj.title}
-              data-desc={proj.desc}
-            >
-              {proj.media.map((item, mIdx) => {
-                const sideClass = item.side === 'r' ? 'brand2__img--r' : 'brand2__img--l';
-                return (
-                  <figure 
-                    key={mIdx} 
-                    className={`brand2__img ${sideClass} cursor-pointer`}
-                    onClick={() => onSelectProject(proj)}
-                  >
-                    <img 
-                      src={item.src} 
-                      alt={proj.title} 
-                      width="1600" 
-                      height="2400" 
-                      loading="lazy" 
-                    />
-                  </figure>
-                );
-              })}
-            </div>
-          ))}
+          {prints.map((proj, pIdx) => {
+            const sideClass = (pIdx % 2 === 0) ? 'brand2__img--r' : 'brand2__img--l';
+            return (
+              <div
+                key={proj.id}
+                ref={(el) => (groupsRef.current[pIdx] = el)}
+                className="brand2__group"
+                data-num={String(pIdx + 1).padStart(2, '0')}
+                data-title={proj.title}
+                data-desc={proj.description}
+              >
+                <figure 
+                  className={`brand2__img ${sideClass} cursor-pointer`}
+                  onClick={() => onSelectProject({
+                    id: proj.id,
+                    title: proj.title,
+                    description: proj.description,
+                    image: proj.media,
+                  })}
+                >
+                  <img 
+                    src={proj.media} 
+                    alt={proj.title} 
+                    width="1600" 
+                    height="2400" 
+                    loading="lazy" 
+                  />
+                </figure>
+              </div>
+            );
+          })}
         </div>
       </section>
     </>

@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ALBUMS } from '../data/taxerData';
+import { getStoredCollections } from '../utils/cmsStore';
 
 export default function VinylArtworkSection({ onSelectAlbum }) {
+  const [partners, setPartners] = useState(() => {
+    return getStoredCollections().filter((i) => i.tag === 'partner');
+  });
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const list = getStoredCollections().filter((i) => i.tag === 'partner');
+      setPartners(list);
+      if (activeIndex >= list.length) {
+        setActiveIndex(Math.max(0, list.length - 1));
+      }
+    };
+    window.addEventListener('figuremap_collections_updated', handleUpdate);
+    return () => window.removeEventListener('figuremap_collections_updated', handleUpdate);
+  }, [activeIndex]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -13,15 +28,18 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
       if (totalScroll <= 0) return;
 
       const progress = Math.max(0, Math.min(1, -rect.top / totalScroll));
-      const idx = Math.min(ALBUMS.length - 1, Math.floor(progress * ALBUMS.length));
+      const idx = Math.min(partners.length - 1, Math.floor(progress * partners.length));
       setActiveIndex(idx);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [partners.length]);
 
-  const activeAlbum = ALBUMS[activeIndex];
+  if (partners.length === 0) return null;
+
+  const activeAlbum = partners[activeIndex] || partners[0];
+  const albumId = String(activeIndex + 1).padStart(2, '0');
 
   return (
     <section className="albums" id="partners" ref={containerRef}>
@@ -32,7 +50,12 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
           
           {/* Active Album Vinyl + Sleeve Centerpiece */}
           <div 
-            onClick={() => onSelectAlbum(activeAlbum)}
+            onClick={() => onSelectAlbum({
+              id: activeAlbum.id,
+              title: activeAlbum.title,
+              image: activeAlbum.media,
+              description: activeAlbum.description,
+            })}
             className="relative w-[320px] sm:w-[480px] md:w-[560px] aspect-square cursor-pointer group"
           >
             {/* Vinyl Record slipping out behind */}
@@ -45,7 +68,7 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
               {/* Center Vinyl Label */}
               <div className="w-24 sm:w-36 aspect-square rounded-full overflow-hidden border-2 border-white/30 flex items-center justify-center bg-[#090909]">
                 <img
-                  src={activeAlbum.cover}
+                  src={activeAlbum.media}
                   alt={activeAlbum.title}
                   className="w-full h-full object-cover opacity-80"
                 />
@@ -56,7 +79,7 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
             {/* Album Outer Cardboard Sleeve */}
             <div className="relative z-10 w-full h-full rounded-sm overflow-hidden bg-[#141414] border border-[var(--line)] shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]">
               <img
-                src={activeAlbum.cover}
+                src={activeAlbum.media}
                 alt={activeAlbum.title}
                 className="w-full h-full object-cover transition-opacity duration-500"
               />
@@ -65,8 +88,8 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
               <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end text-xs font-mono-custom text-[#d9d9d9]">
                 <div>
                   <div className="text-base sm:text-xl font-serif-custom font-bold">{activeAlbum.title}</div>
-                  <div className="text-[10px] text-[var(--ink-dim)]">{activeAlbum.partner}</div>
-                  <div className="text-[9px] text-[var(--accent)] mt-0.5">{activeAlbum.technique}</div>
+                  <div className="text-[10px] text-[var(--ink-dim)]">Partner: {activeAlbum.partnerName || 'Avant-Garde Studio'}</div>
+                  <div className="text-[9px] text-[var(--accent)] mt-0.5">{activeAlbum.technique || `${activeAlbum.month} ${activeAlbum.year}`}</div>
                 </div>
                 <div className="text-[10px] uppercase border border-[var(--line)] px-2 py-0.5 rounded">
                   DM TO RESERVE
@@ -77,7 +100,7 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
 
           {/* Quick manual indicator / next buttons */}
           <div className="absolute top-1/2 right-8 -translate-y-1/2 flex flex-col gap-2 z-20">
-            {ALBUMS.map((alb, i) => (
+            {partners.map((alb, i) => (
               <button
                 key={alb.id}
                 onClick={() => setActiveIndex(i)}
@@ -91,14 +114,14 @@ export default function VinylArtworkSection({ onSelectAlbum }) {
 
         {/* Bottom Left Title */}
         <h3 className="albums__title" id="albumTitle" aria-live="polite">
-          {activeAlbum.title} — {activeAlbum.partner}
+          {activeAlbum.title} — {activeAlbum.partnerName || 'Figure Map Edition'}
         </h3>
 
         {/* Bottom Right Meta */}
         <div className="albums__meta">
           <span className="albums__num">
             <span className="albums__num-dash">/</span>
-            <span id="albumNum">{activeAlbum.id}</span>
+            <span id="albumNum">{albumId}</span>
           </span>
         </div>
 
