@@ -265,13 +265,9 @@ export default function AdminCMS({ onExit }) {
           </div>
 
           {/* Bottom Card Footer */}
-          <div className="flex justify-between items-end w-full pt-4">
-            <div className="text-[11px] text-[#94A3B8] text-center w-full">
-              By signing in, you consent to the Figure Map <span className="font-semibold text-[#64748B]">Terms of Use</span> and <span className="font-semibold text-[#64748B]">Privacy Policy</span>.
-            </div>
-
+          <div className="flex justify-end items-end w-full pt-4">
             {/* Bottom Right Minimal Circular Badge */}
-            <div className="absolute right-6 bottom-6 opacity-30 text-[#64748B]">
+            <div className="opacity-30 text-[#64748B]">
               <div className="w-6 h-6 rounded-full border border-[#94A3B8] flex items-center justify-center text-[10px] font-mono">
                 FM
               </div>
